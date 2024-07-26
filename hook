@@ -1,0 +1,238 @@
+-- List of whitelisted player names
+local whitelist = {
+  	["SoloisBlatant"] = true,
+		["23fgthy"] = true,
+		["HerSecretts"] = true,
+		["Lolcat_F845"] = true,
+		["User5"] = true,
+    ["User6"] = true,
+    ["User7"] = true,
+    ["User8"] = true,
+    ["User9"] = true,
+    ["User10"] = true,
+    ["User11"] = true,
+	}
+	
+	-- Function to check if a player is whitelisted
+	local function isWhitelisted(player)
+		return whitelist[player.Name] == true
+	end
+	
+	-- Function to handle player joining
+	game.Players.PlayerAdded:Connect(function(player)
+		if not isWhitelisted(player) then
+			player:Kick("Not Whitelisted Broke Nigga")
+		else
+			print(player.Name .. " has joined the game.")
+			-- Activate loadstring for whitelisted players
+		end
+	end)
+	
+	-- Check existing players
+	for _, player in ipairs(game.Players:GetPlayers()) do
+		if not isWhitelisted(player) then
+			player:Kick("Not Whitelisted.")
+		else
+
+
+Stored = getgenv().Stored
+
+setfpscap(150)
+
+-- Services
+local RunService       = game:GetService("RunService")
+local players          = game:GetService("Players")
+local guiService       = game:GetService("GuiService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Variables
+local Client     = players.LocalPlayer
+local Mouse      = Client:GetMouse()
+local Char       = Client.Character
+local Camera     = workspace.CurrentCamera
+local Target     = nil
+local hitboxsize = Stored.hitboxsize
+
+-- Functions
+local newVector2, newColor3, newDrawing = Vector2.new, Color3.new, Drawing.new
+local tan, rad = math.tan, math.rad
+local round = function(...) local a = {}; for i, v in next, table.pack(...) do a[i] = math.round(v); end return unpack(a); end
+local wtvp = function(...) local a, b = Camera:WorldToViewportPoint(...) return newVector2(a.X, a.Y), b, a.Z end
+local settings = { defaultcolor = Color3.fromRGB(255, 0, 0), teamcheck = false, teamcolor = true} -- leave this if you dont know what to do :))
+
+-- ESP Drawing Setup
+local espDrawing = {
+    box = newDrawing("Square"),
+    boxoutline = newDrawing("Square"),
+    boxinline = newDrawing("Square")
+}
+
+espDrawing.box.Thickness = 0.3
+espDrawing.box.Filled = false
+espDrawing.box.Color = settings.defaultcolor
+espDrawing.box.Visible = false
+espDrawing.box.ZIndex = 2
+
+espDrawing.boxoutline.Thickness = 2
+espDrawing.boxoutline.Filled = false
+espDrawing.boxoutline.Color = newColor3()
+espDrawing.boxoutline.Visible = false
+espDrawing.boxoutline.ZIndex = 1
+
+espDrawing.boxinline.Thickness = 2
+espDrawing.boxinline.Filled = false
+espDrawing.boxinline.Color = newColor3()
+espDrawing.boxinline.Visible = false
+espDrawing.boxinline.ZIndex = 1
+
+-- Update ESP Function
+local function updateEsp(player)
+    local character = player and player.Character
+    if character then
+        local cframe = character:GetModelCFrame()
+        local position, visible, depth = wtvp(character.HumanoidRootPart.Position)
+        espDrawing.box.Visible = visible
+        espDrawing.boxoutline.Visible = visible
+        espDrawing.boxinline.Visible = visible
+
+        if visible then
+            local scaleFactor = 1 / (depth * tan(rad(Camera.FieldOfView / 2)) * 2) * 1000
+            local width, height = round(4 * scaleFactor * hitboxsize, 7 * scaleFactor * hitboxsize)
+            local x, y = round(position.X, position.Y)
+
+            espDrawing.box.Size = newVector2(width, height)
+            espDrawing.box.Position = newVector2(round(x - width / 2, y - height / 2))
+            espDrawing.box.Color = settings.teamcolor and player.TeamColor.Color or settings.defaultcolor
+
+            espDrawing.boxoutline.Size = espDrawing.box.Size
+            espDrawing.boxoutline.Position = espDrawing.box.Position
+
+            espDrawing.boxinline.Size = espDrawing.box.Size - newVector2(2, 2)
+            espDrawing.boxinline.Position = espDrawing.box.Position + newVector2(1, 1)
+        end
+    else
+        espDrawing.box.Visible = false
+        espDrawing.boxoutline.Visible = false
+        espDrawing.boxinline.Visible = false
+    end
+end
+
+-- Get closest part to aim, excluding feet
+local function getClosestPart(character)
+    local closestPart = nil
+    local closestDistance = math.huge
+    for _, part in ipairs(character:GetChildren()) do
+        if part:IsA("BasePart") and not part.Name:match("Foot") then
+            local position, onScreen = Camera:WorldToScreenPoint(part.Position)
+            if onScreen then
+                local distance = (newVector2(position.X, position.Y) - newVector2(Mouse.X, Mouse.Y)).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestPart = part
+                end
+            end
+        end
+    end
+    return closestPart
+end
+
+-- Main
+local GetClosestToMouse = function()
+    local Target, Closest = nil, math.huge
+    for _, v in pairs(players:GetPlayers()) do
+        if v.Character and v ~= Client and v.Character:FindFirstChild("HumanoidRootPart") then
+            local Position, OnScreen = Camera:WorldToScreenPoint(v.Character.HumanoidRootPart.Position)
+            local Distance = (newVector2(Position.X, Position.Y) - newVector2(Mouse.X, Mouse.Y)).Magnitude
+            if Distance < Closest and OnScreen then
+                Closest = Distance
+                Target = v
+            end
+        end
+    end
+    return Target
+end
+
+local MouseInFrame = function(frame)
+    local mousePosition = newVector2(Mouse.X, Mouse.Y + guiService:GetGuiInset().Y)
+    local boxPosition = frame.Position
+    local boxSize = frame.Size
+    return mousePosition.X >= boxPosition.X and mousePosition.X <= boxPosition.X + boxSize.X and mousePosition.Y >= boxPosition.Y and mousePosition.Y <= boxPosition.Y + boxSize.Y
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if input.KeyCode == Stored.Keybind and not gameProcessedEvent then
+        if not Target then
+            Target = GetClosestToMouse()
+        else
+            Target = nil
+        end
+    end    
+end)
+
+RunService.RenderStepped:Connect(function()
+    if Target and Target.Character then
+        local aimPart = Target.Character[Stored.AimPart]
+        if Stored.UseNearestPart then
+            aimPart = getClosestPart(Target.Character) or aimPart
+        end
+        
+        updateEsp(Target)
+        if MouseInFrame(espDrawing.box) then
+            espDrawing.box.Color = Color3.fromRGB(173, 216, 230)
+            Stored.CanShoot = true
+        else
+            espDrawing.box.Color = settings.teamcolor and Target.TeamColor.Color or settings.defaultcolor
+            Stored.CanShoot = false
+        end
+
+        local Main = CFrame.new(Camera.CFrame.p, aimPart.Position + aimPart.Velocity * Stored.Prediction)
+        Camera.CFrame = Camera.CFrame:Lerp(Main, Stored.SmoothnessValue, Stored.EasingStyle, Stored.EasingDirection)
+    else
+        espDrawing.box.Visible = false
+        espDrawing.boxoutline.Visible = false
+        espDrawing.boxinline.Visible = false
+        Stored.CanShoot = false
+    end
+end)
+
+local function CharAdded()
+    Char.ChildAdded:Connect(function(tool)
+        if tool:IsA("Tool") then
+            tool.Activated:Connect(function()
+                if Target ~= nil and Stored.CanShoot then
+                    local aimPart = Target.Character[Stored.AimPart]
+                    if Stored.UseNearestPart then
+                        aimPart = getClosestPart(Target.Character) or aimPart
+                    end
+                    game:GetService("ReplicatedStorage").MainEvent:FireServer(Stored.Argument, aimPart.Position + (aimPart.Velocity * Stored.Prediction))
+                end
+            end)
+        end
+    end)
+end
+
+Client.CharacterAdded:Connect(function(newchar)
+    Char = newchar
+    CharAdded()
+end)
+
+CharAdded()
+
+-- Apply velocity changes
+RunService.Heartbeat:Connect(function()
+    pcall(function()
+        for i,v in pairs(players:GetPlayers()) do
+            if v.Name ~= Client.Name and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = v.Character.HumanoidRootPart
+                hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)    
+                hrp.AssemblyLinearVelocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)   
+            end
+        end
+    end)
+end)
+
+
+
+
+		end
+	end
